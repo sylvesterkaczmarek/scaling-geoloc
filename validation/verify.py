@@ -70,7 +70,18 @@ finally:
 assert test('restored-focused', focused) == [expected_count, 0, 0, 0]
 run('source-restored', ['git', 'diff', '--exit-code'])
 run('test-lint', [python, '-m', 'ruff', 'check', '--isolated', '--select', 'E,F', '--ignore', 'E501', meta['test']])
-run('source-correctness-lint', [python, '-m', 'ruff', 'check', '--isolated', '--select', 'E9,F63,F7,F82', meta['source']])
+lint_args = [python, '-m', 'ruff', 'check', '--isolated', '--select', 'E9,F63,F7,F82', '--output-format', 'json', meta['source']]
+# etils shape strings are not ordinary Python forward-reference annotations.
+# Preserve their existing diagnostics and fail if this patch adds or changes any.
+try:
+    source.write_bytes(original)
+    baseline_lint = json.loads(run('source-lint-original', lint_args, expected=1))
+finally:
+    source.write_bytes(fixed)
+fixed_lint = json.loads(run('source-lint-fixed', lint_args, expected=1))
+assert baseline_lint == fixed_lint
+assert len(fixed_lint) == 15 and {x['code'] for x in fixed_lint} == {'F722', 'F821'}
+run('source-compiles', [python, '-c', 'import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text())', meta['source']])
 if laser:
     text = run('test-format', [python, '-m', 'yapf', '--style={based_on_style: google, indent_width: 2}', '-d', meta['test']])
     assert not text.strip(), text
