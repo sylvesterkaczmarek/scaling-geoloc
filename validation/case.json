@@ -1,0 +1,12 @@
+{
+  "repo": "google-research/scaling-geoloc",
+  "base_branch": "main",
+  "base": "bf6c7e379efe599bc0417ef0c1f2808916df4544",
+  "issue_url": "https://github.com/google-research/scaling-geoloc/issues/4",
+  "issue": 4,
+  "branch": "fix/bilinear-neighbor-weight-order-20260928",
+  "title": "Align bilinear interpolation weights with the supplied neighbor order",
+  "source": "scaling_geoloc/utils/geo.py",
+  "test": "scaling_geoloc/utils/geo_test.py",
+  "head": "0a5604cfa58eac1439a8584b22bd9c8792b3306d"
+}

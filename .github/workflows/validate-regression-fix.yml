@@ -1,0 +1,45 @@
+name: Exact-source regression validation
+on:
+  push:
+    branches: ['validation/bilinear-neighbor-weight-order-20260928']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+    env:
+      TF_CPP_MIN_LOG_LEVEL: '2'
+      TF_NUM_INTEROP_THREADS: '1'
+      TF_NUM_INTRAOP_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      JAX_PLATFORMS: cpu
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: sylvesterkaczmarek/scaling-geoloc
+          ref: '0a5604cfa58eac1439a8584b22bd9c8792b3306d'
+          path: work
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install focused test dependencies
+        run: |
+          python -m venv test-env
+          test-env/bin/python -m pip install jax==0.6.2 numpy==2.2.6 pyproj==3.7.2 etils==1.14.0 scipy==1.17.1 typing_extensions pytest==9.1.1 pytest-cov pytest-env ruff==0.16.9 pyink==26.5.1
+      - name: Verify exact source and original-code controls
+        run: test-env/bin/python validation/verify.py work evidence
+      - name: Save validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: evidence-${{ matrix.python }}
+          path: evidence
+          retention-days: 14
